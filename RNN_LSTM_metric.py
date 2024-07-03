@@ -6,17 +6,38 @@ from keras.layers import Dense,LSTM
 from sklearn.model_selection import train_test_split
 
 
-#the numbers and inputs to be received from the input results
-poses_orb = np.random.rand(1000, 7)         #placeholder values for number of inputs now
-poses_openvslam = np.random.rand(1000, 7)
+#################
+#to get GT
+def read_ground_truth(file_path):
+    data = np.loadtxt(file_path)
+    return data
 
-train_traj = np.stack((poses_orb, poses_openvslam), axis=2)
-target_traj = (poses_orb + poses_openvslam) / 2     #this target data for training will be GT
+ground_truth = read_ground_truth('ground_truth.txt')
+print(ground_truth[:10])
+###################
+
+
+#################
+#to get the SLAM trajectory outputs
+def read_traj_outputs(file_path):
+    data = np.loadtxt(file_path)
+    return data
+
+poses_orb = read_traj_outputs('traj_ORB3.txt')
+poses_openvslam = read_traj_outputs('traj_OpenVSLAM.txt')
+print(poses_orb[:10])
+print(poses_openvslam[:10])
+################
+
+train_input_traj = np.stack((poses_orb, poses_openvslam), axis=2)
+target_input_traj = ground_truth
+
+assert ground_truth.shape[0] == poses_orb.shape[0] == poses_openvslam.shape[0], "Mismatch in number of samples"
 
 sequence_length = 10
-num_sequences = train_traj.shape[0] - sequence_length
-X = np.array([train_traj[i:i+sequence_length] for i in range(num_sequences)])
-y = np.array([target_traj[i+sequence_length] for i in range(num_sequences)])
+num_sequences = train_input_traj.shape[0] - sequence_length
+X = np.array([train_input_traj[i:i+sequence_length] for i in range(num_sequences)])
+y = np.array([target_input_traj[i+sequence_length] for i in range(num_sequences)])
 
 X_train,X_val,y_train,y_val=train_test_split(X,y,test_size=0.2,random_state=42)
 
